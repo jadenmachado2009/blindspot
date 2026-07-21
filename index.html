@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blindspot — Behavioural Bias Intervention</title>
+<meta name="description" content="Profile your cognitive biases, then get a personalised check at the moment of decision — for trades and for life.">
+<meta property="og:title" content="Blindspot — Behavioural Bias Intervention">
+<meta property="og:description" content="Know your bias fingerprint. Catch it before the decision, not after.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#128374;&#65039;</text></svg>">
+<style>
+  :root{
+    --bg:#0b0f14; --panel:#121820; --panel2:#0f141b; --border:#1f2937;
+    --text:#e5eaf1; --muted:#8b97a8; --accent:#4f8ef7; --accent2:#7c5cff;
+    --green:#2dd4a0; --amber:#f5b942; --red:#f4645c; --mark:#3b2f14;
+    --radius:14px; --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  }
+  body.mode-general{--accent:#2dd4a0;--accent2:#4f8ef7}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--text);font-family:var(--font);line-height:1.55;min-height:100vh}
+  a{color:var(--accent)}
+  .wrap{max-width:880px;margin:0 auto;padding:0 20px 80px}
+
+  header{padding:28px 0 8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+  .logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:20px;letter-spacing:-.02em}
+  .logo .dot{width:12px;height:12px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 0 14px var(--accent)}
+  .logo small{font-weight:500;color:var(--muted);font-size:12px;margin-left:4px}
+
+  nav{display:flex;gap:6px;background:var(--panel);border:1px solid var(--border);border-radius:99px;padding:5px}
+  nav button{background:none;border:none;color:var(--muted);font-family:inherit;font-size:14px;font-weight:600;padding:8px 18px;border-radius:99px;cursor:pointer;transition:.18s}
+  nav button:hover{color:var(--text)}
+  nav button.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+
+  .mode-bar{display:flex;justify-content:center;margin:6px 0 4px}
+  .mode-switch{display:flex;gap:4px;background:var(--panel);border:1px solid var(--border);border-radius:99px;padding:4px}
+  .mode-switch button{background:none;border:none;color:var(--muted);font-family:inherit;font-size:13px;font-weight:700;padding:7px 20px;border-radius:99px;cursor:pointer;transition:.18s}
+  .mode-switch button.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+  .mode-switch button:hover:not(.active){color:var(--text)}
+
+  .screen{display:none;animation:fade .25s ease}
+  .screen.visible{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  .hero{text-align:center;padding:46px 0 36px}
+  .hero h1{font-size:clamp(30px,5vw,44px);letter-spacing:-.03em;line-height:1.15;margin-bottom:16px}
+  .hero h1 span{background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p{color:var(--muted);max-width:580px;margin:0 auto 28px;font-size:17px}
+  .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:36px 0}
+  .step{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:20px;text-align:left}
+  .step b{display:block;margin-bottom:6px;font-size:15px}
+  .step .n{display:inline-flex;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-weight:700;font-size:13px;align-items:center;justify-content:center;margin-bottom:10px}
+  .step p{color:var(--muted);font-size:13.5px}
+
+  .btn{display:inline-block;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;font-family:inherit;font-size:15px;font-weight:700;padding:13px 28px;border-radius:12px;cursor:pointer;transition:.18s;text-decoration:none}
+  .btn:hover{filter:brightness(1.12);transform:translateY(-1px)}
+  .btn.ghost{background:var(--panel);border:1px solid var(--border);color:var(--text)}
+  .btn.sm{padding:9px 18px;font-size:13.5px}
+  .btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+  .muted{color:var(--muted)}
+  .small{font-size:13px}
+
+  /* assessment */
+  .progress{height:6px;background:var(--panel);border-radius:99px;margin:26px 0 22px;overflow:hidden}
+  .progress i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:99px;transition:width .3s ease}
+  .qnum{color:var(--muted);font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px}
+  .qtext{font-size:19px;font-weight:600;letter-spacing:-.01em;margin-bottom:20px}
+  .opt{display:block;width:100%;text-align:left;background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:15px 18px;margin-bottom:10px;color:var(--text);font-family:inherit;font-size:15px;cursor:pointer;transition:.15s}
+  .opt:hover{border-color:var(--accent);background:#131c28}
+  .qnav{display:flex;justify-content:space-between;margin-top:18px}
+
+  /* profile */
+  .profile-grid{display:grid;grid-template-columns:minmax(260px,340px) 1fr;gap:20px;align-items:start}
+  @media(max-width:760px){.profile-grid{grid-template-columns:1fr}}
+  .radar-card{display:flex;flex-direction:column;align-items:center;gap:8px}
+  .bias-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+  .bias-row:last-child{border-bottom:none}
+  .bias-row .name{flex:0 0 130px;font-weight:600;font-size:14px}
+  .bar{flex:1;height:8px;background:var(--panel2);border-radius:99px;overflow:hidden}
+  .bar i{display:block;height:100%;border-radius:99px;transition:width .5s ease}
+  .score-pill{flex:0 0 44px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+  details.bias-detail{border:1px solid var(--border);border-radius:12px;margin-bottom:10px;background:var(--panel2)}
+  details.bias-detail summary{padding:14px 18px;cursor:pointer;font-weight:600;font-size:14.5px;display:flex;justify-content:space-between;align-items:center;list-style:none}
+  details.bias-detail summary::-webkit-details-marker{display:none}
+  details.bias-detail .body{padding:0 18px 16px;color:var(--muted);font-size:14px}
+  .lvl{font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:99px;letter-spacing:.04em}
+  .lvl.high{background:rgba(244,100,92,.15);color:var(--red)}
+  .lvl.mod{background:rgba(245,185,66,.15);color:var(--amber)}
+  .lvl.low{background:rgba(45,212,160,.14);color:var(--green)}
+
+  /* decision check */
+  textarea{width:100%;min-height:150px;background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:16px;color:var(--text);font-family:inherit;font-size:15px;resize:vertical;line-height:1.6}
+  textarea:focus{outline:none;border-color:var(--accent)}
+  .examples{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 4px}
+  .chip-btn{background:var(--panel2);border:1px solid var(--border);border-radius:99px;color:var(--muted);font-family:inherit;font-size:12.5px;padding:6px 13px;cursor:pointer;transition:.15s}
+  .chip-btn:hover{color:var(--text);border-color:var(--accent)}
+
+  .result-card{border-left:4px solid var(--border)}
+  .result-card.high{border-left-color:var(--red)}
+  .result-card.mod{border-left-color:var(--amber)}
+  .result-card.low{border-left-color:var(--green)}
+  .result-head{display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+  .result-head h3{font-size:17px;letter-spacing:-.01em}
+  .match-chips{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+  .match-chips span{background:var(--mark);border:1px solid #5c4a1e;color:#f0d48a;font-size:12.5px;padding:3px 10px;border-radius:99px}
+  .rq{margin-top:12px;padding-left:2px}
+  .rq li{margin:7px 0 7px 18px;color:var(--text);font-size:14.5px}
+  .echo{background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:16px;font-size:14.5px;color:var(--muted);margin-bottom:16px;line-height:1.7}
+  .echo mark{background:var(--mark);color:#f0d48a;border-radius:4px;padding:1px 4px}
+
+  .callout{background:rgba(79,142,247,.08);border:1px solid rgba(79,142,247,.25);border-radius:12px;padding:14px 18px;font-size:13.5px;color:var(--muted);margin-top:22px}
+  .empty-state{text-align:center;padding:48px 20px;color:var(--muted)}
+  footer{margin-top:60px;text-align:center;color:var(--muted);font-size:12.5px;border-top:1px solid var(--border);padding-top:24px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo"><span class="dot"></span>Blindspot <small>behavioural bias intervention</small></div>
+    <nav>
+      <button data-nav="home" class="active">Home</button>
+      <button data-nav="assess">Assessment</button>
+      <button data-nav="profile" id="navProfile">My Profile</button>
+      <button data-nav="check" id="navCheck">Trade Check</button>
+    </nav>
+  </header>
+  <div class="mode-bar">
+    <div class="mode-switch">
+      <button data-mode="trading" id="modeTrading">📈 Trading</button>
+      <button data-mode="general" id="modeGeneral">🧭 Everyday</button>
+    </div>
+  </div>
+
+  <!-- HOME -->
+  <section class="screen visible" id="screen-home">
+    <div class="hero">
+      <h1 id="heroH1"></h1>
+      <p id="heroP"></p>
+      <button class="btn" onclick="startAssessment()">Build my bias fingerprint →</button>
+    </div>
+    <div class="steps">
+      <div class="step"><span class="n">1</span><b>Profile</b><p id="step1"></p></div>
+      <div class="step"><span class="n">2</span><b>Describe</b><p id="step2"></p></div>
+      <div class="step"><span class="n">3</span><b>Intervene</b><p id="step3"></p></div>
+    </div>
+    <div class="card small muted">Grounded in established behavioural economics: Kahneman &amp; Tversky (prospect theory), Thaler (mental accounting, sunk cost, defaults), Cialdini (social proof), Samuelson &amp; Zeckhauser (status quo bias), Shiller (narrative economics), Odean (retail overconfidence). Blindspot doesn't tell you what to do — it makes the bias visible so you can decide consciously. Not financial or professional advice. All data stays in your browser.</div>
+  </section>
+
+  <!-- ASSESSMENT -->
+  <section class="screen" id="screen-assess">
+    <div class="progress"><i id="progBar" style="width:0%"></i></div>
+    <div class="card" id="qCard"></div>
+    <div class="qnav">
+      <button class="btn ghost sm" id="backBtn" onclick="prevQuestion()">← Back</button>
+      <span class="muted small" style="align-self:center">Answer honestly — there are no right answers, only accurate ones.</span>
+    </div>
+  </section>
+
+  <!-- PROFILE -->
+  <section class="screen" id="screen-profile"></section>
+
+  <!-- CHECK -->
+  <section class="screen" id="screen-check">
+    <h2 style="letter-spacing:-.02em;margin-bottom:6px" id="checkTitle"></h2>
+    <p class="muted" style="margin-bottom:18px" id="checkDesc"></p>
+    <div class="card">
+      <textarea id="tradeText"></textarea>
+      <div class="examples" id="exampleRow"></div>
+      <div style="margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button class="btn" onclick="runCheck()">Check this decision</button>
+        <span class="muted small" id="profileStatus"></span>
+      </div>
+    </div>
+    <div id="checkResults"></div>
+  </section>
+
+  <footer>Blindspot · Behavioural Bias Intervention Tool · For education and self-reflection only — not financial or professional advice. Your data never leaves your browser.</footer>
+</div>
+
+<script>
+/* ================================================================
+   MODES — each mode is a full content pack: biases, assessment,
+   NLP patterns, examples and UI copy. The engine below is shared.
+   ================================================================ */
+const MODES = {
+
+/* ---------------- TRADING MODE ---------------- */
+trading: {
+  label:"Trading",
+  copy:{
+    heroH1:`You can't see your own biases.<br><span>This can.</span>`,
+    heroP:`Retail traders don't lose because they lack information — they lose to predictable cognitive biases that fire at the moment of execution. Blindspot profiles <em>your</em> specific biases, then checks every trade decision against them before you pull the trigger.`,
+    step1:`10 realistic trading scenarios score you 0–9 across six documented cognitive biases: loss aversion, FOMO, overconfidence, recency bias, anchoring and herding.`,
+    step2:`Before executing a trade, explain what you're doing and why — in plain language, the way you'd actually think it.`,
+    step3:`The engine reads your reasoning, cross-references it against your personal profile, and surfaces which blind spots may be active — before the trade, not after.`,
+    navCheck:"Trade Check",
+    checkTitle:"Trade Check",
+    checkDesc:`Describe the trade you're about to make and <b>why</b>. Write it exactly how you're thinking it — the messier and more honest, the better the read.`,
+    placeholder:`e.g. I'm down 22% on NVDA but I'm not selling at a loss — it always comes back. Everyone on r/wallstreetbets is saying it'll rip after earnings and I don't want to miss the move, so I'm actually thinking of doubling down here…`,
+    subject:"trade",
+    clearNote:`Your stated reasoning doesn't show the linguistic markers of the six tracked biases. That doesn't make the trade good — it means the <em>reasoning</em> reads clean. Two checks that still apply: is your position sized for being wrong, and do you have a written invalidation point?`
+  },
+  biases:{
+    LA:{name:"Loss Aversion", color:"#f4645c",
+      desc:"Losses hurt roughly twice as much as equivalent gains feel good (Kahneman & Tversky). In trading it shows up as holding losers too long, moving stops, refusing to realise a loss, and cutting winners early.",
+      questions:[
+        "If you didn't own this position, would you buy it today at this price?",
+        "Is this decision about the asset's future — or about avoiding the pain of admitting a loss?",
+        "What is your invalidation point, and are you honouring the one you set before entering?"
+      ]},
+    FOMO:{name:"FOMO", color:"#f5b942",
+      desc:"Fear of missing out drives late entries into extended moves. The urgency you feel is a signal about the crowd's emotions, not about the asset's value.",
+      questions:[
+        "Would this trade still make sense if the price hadn't moved in the last two weeks?",
+        "What's your edge entering now versus everyone who entered before you?",
+        "If you miss this move entirely, what actually happens to your long-term results?"
+      ]},
+    OC:{name:"Overconfidence", color:"#7c5cff",
+      desc:"Traders systematically overestimate their skill and information edge (Odean). It shows up as oversizing, overtrading, removing stops, and certainty language — 'guaranteed', 'can't lose', 'all in'.",
+      questions:[
+        "What specifically would prove you wrong, and how much will it cost to find out?",
+        "Is this position sized so that being wrong is survivable — or only sized for being right?",
+        "How many of your last 20 trades actually worked? Check, don't recall."
+      ]},
+    RB:{name:"Recency Bias", color:"#2dd4a0",
+      desc:"Overweighting recent events as predictive of the future. Streaks, 'it keeps going up', and post-drawdown fear are all recency talking — small samples masquerading as signal.",
+      questions:[
+        "Is your evidence a real base rate, or just the last few days or trades?",
+        "If the recent streak reversed tomorrow, would your thesis still stand?",
+        "Are you extrapolating a trend or analysing a business/setup?"
+      ]},
+    AN:{name:"Anchoring", color:"#4f8ef7",
+      desc:"Fixating on arbitrary reference prices — your entry, the 52-week high, 'where it was last month'. The market doesn't know or care what price you paid.",
+      questions:[
+        "Does your entry price have any bearing on where this asset goes next?",
+        "Are you calling it 'cheap' relative to fundamentals, or relative to a past price?",
+        "If you first saw this chart today with no history of owning it, what would you conclude?"
+      ]},
+    HD:{name:"Herding", color:"#e879f9",
+      desc:"Following the crowd — social feeds, influencers, analyst consensus — instead of your own analysis (Shiller's narrative economics). Crowded trades feel safest exactly when they're most fragile.",
+      questions:[
+        "Strip away who else is in this trade — what does your own analysis say?",
+        "If the person or forum you got this from went silent, would you still take it?",
+        "Do you understand this position well enough to know when to exit without them?"
+      ]}
+  },
+  questions:[
+   {q:"You're down 18% on a position and the original reason you bought no longer holds. What do you do?",
+    o:[["Sell — the thesis is broken; the loss is already sunk.",{}],
+       ["Hold until it gets back to my entry price, then sell.",{LA:3,AN:2}],
+       ["Buy more to lower my average cost.",{LA:2,OC:2}],
+       ["Sell half, hold half — I can't take the full loss.",{LA:2}]]},
+   {q:"A stock is up 40% in two weeks and your feed is full of people posting gains. You:",
+    o:[["Buy now — it's clearly running and I don't want to miss it.",{FOMO:3,HD:2}],
+       ["Buy a small 'starter' position just to be in it.",{FOMO:2,HD:1}],
+       ["Add it to a watchlist and research it like any other idea.",{}],
+       ["Wait for it to pull back to where it was last week, then buy.",{AN:2,FOMO:1}]]},
+   {q:"You've won 5 trades in a row. For the next trade you:",
+    o:[["Size up significantly — I'm clearly in sync with the market right now.",{OC:3,RB:2}],
+       ["Size up a little — momentum matters.",{OC:1,RB:1}],
+       ["Keep the same size — five trades proves nothing statistically.",{}],
+       ["Size down — I'm probably due for a loss.",{RB:2}]]},
+   {q:"You bought at $50. It's now $38. Nothing about the company has changed. Your plan:",
+    o:[["Re-evaluate it as if I were deciding fresh today at $38.",{}],
+       ["Hold until $50 — I'm not selling at a loss.",{AN:3,LA:3}],
+       ["Set an alert at $50 and decide when it gets there.",{AN:2,LA:1}],
+       ["Sell — it must be falling for a reason I can't see.",{HD:1,RB:1}]]},
+   {q:"The market has dropped hard four days in a row. You think:",
+    o:[["The next few days will probably be red too — I'm de-risking.",{RB:3}],
+       ["It's oversold — a bounce is basically guaranteed.",{RB:2,OC:2}],
+       ["Four days tells me little about the next four — I'll follow my plan.",{}],
+       ["I'll wait until I see others start buying before I step in.",{HD:2}]]},
+   {q:"A trader you follow — with a strong public track record — posts a high-conviction trade. You:",
+    o:[["Take the trade — their track record speaks for itself.",{HD:3}],
+       ["Take a smaller version of their trade.",{HD:2}],
+       ["Use it as a research prompt but only act on my own analysis.",{}],
+       ["Fade it — the crowd is usually wrong.",{OC:2}]]},
+   {q:"Your own analysis says buy, but analyst consensus is firmly bearish. You:",
+    o:[["Trust my work completely and size up — the crowd is missing it.",{OC:3}],
+       ["Skip it — that many professionals can't all be wrong.",{HD:3}],
+       ["Take the trade at normal size with a clearly defined invalidation.",{}],
+       ["Take a tiny position, just in case I turn out to be right.",{FOMO:1,LA:1}]]},
+   {q:"You almost bought a stock at $20 but passed. Three weeks later it's $35 and still climbing. You:",
+    o:[["Buy now — I was right about it, and it'll keep going.",{FOMO:3,RB:2}],
+       ["Refuse to pay $35 for something I could've had at $20.",{AN:3}],
+       ["Re-evaluate it at $35 on current merits — my history with it is irrelevant.",{}],
+       ["Wait for it to come back near $20.",{AN:2}]]},
+   {q:"Your stop-loss is about to trigger. You:",
+    o:[["Let it trigger — that's exactly what it's for.",{}],
+       ["Move the stop lower to give the trade room to breathe.",{LA:3}],
+       ["Remove the stop — I'll manage the exit manually.",{LA:2,OC:2}],
+       ["Close the position just before the stop so I control the loss.",{LA:1}]]},
+   {q:"A hot sector is at all-time highs and mainstream news covers it daily. You:",
+    o:[["Get exposure now — this is a generational trend everyone can see.",{FOMO:2,HD:2,RB:1}],
+       ["Short it — mainstream coverage marks the top.",{OC:2}],
+       ["Assess valuations name by name; coverage isn't a signal either way.",{}],
+       ["Buy whatever's up the most — leaders keep leading.",{RB:2,FOMO:1}]]}
+  ],
+  patterns:{
+    LA:[
+      [/break\s?-?even|get (back )?to (my )?entry|back to what i paid/ig,2],
+      [/(can'?t|won'?t|refuse to|not going to|not selling) .{0,20}(sell|exit|close|realize|realise)? ?(at )?a loss/ig,3],
+      [/not selling at a loss|sell(ing)? at a loss/ig,2],
+      [/(it|price)('ll| will| always| usually)? ?(come|bounce|go|get)s? back/ig,2],
+      [/(lower|bring down) my (average|avg|cost basis)|averag(e|ing) down|double?-? ?down|doubling down/ig,2],
+      [/already (lost|down)|too late to sell|sunk/ig,2],
+      [/(move|moving|widen|loosen|remove|removing|pull) (my |the )?stop/ig,3],
+      [/give (it|the trade) (some |more )?room/ig,2],
+      [/wait (for|until) (it|price) (to )?(recover|come back|get back)/ig,2],
+      [/down \d+\s?%.{0,40}(hold|holding|not sell|keep)/ig,2],
+      [/lock in (the )?loss/ig,2]
+    ],
+    FOMO:[
+      [/miss(ing)? (out|the (move|run|boat|train|rally|opportunity))/ig,3],
+      [/before it('?s| is) too late|last chance|now or never/ig,3],
+      [/(don'?t|do not) want to miss/ig,3],
+      [/to the moon|mooning|parabolic|going vertical|ripping|it'?ll rip|gonna rip/ig,2],
+      [/everyone('?s| is| else is) (making|getting|printing|up)/ig,2],
+      [/(taking off|running away|exploding|melting up)/ig,2],
+      [/have to (get|be) in|need to (get|be) in|can'?t sit (this|it) out/ig,2],
+      [/fomo/ig,3]
+    ],
+    OC:[
+      [/(i'?m|i am) (sure|certain|positive|convinced)/ig,2],
+      [/guaranteed|can'?t (lose|miss|fail|go wrong)|sure thing|no way (it|this) (drops|falls|fails)/ig,3],
+      [/all[- ]?in|entire (account|portfolio)|everything i have|max(ing)? out/ig,3],
+      [/easy money|free money|no[- ]?brainer|slam dunk|money printer/ig,2],
+      [/i know (it|this|exactly|for a fact)/ig,2],
+      [/\b(100%|definitely|obviously|clearly going)\b/ig,2],
+      [/never wrong|always right|my (system|analysis|strategy) (never|always)/ig,3],
+      [/don'?t need a stop|no stop ?-?loss needed|stops are for/ig,3],
+      [/(siz(e|ing) up|bigger size|([2-9]|two|three)x my (usual|normal) size)/ig,2]
+    ],
+    RB:[
+      [/last (few )?(week|weeks|month|days|sessions)/ig,1],
+      [/(keeps?|kept) (going|climbing|rising|running|falling|dropping|pumping|dumping)/ig,2],
+      [/(been|is) (going|running) (straight )?up|up every (day|week)/ig,2],
+      [/streak|in a row|win(ning)? (streak|run)|hot (streak|hand)|on a roll/ig,3],
+      [/\b(lately|recently)\b/ig,1],
+      [/hot right now|momentum is (crazy|insane|strong)/ig,2],
+      [/(due|overdue) for (a )?(bounce|correction|pullback|loss|win)/ig,2],
+      [/this (always|keeps) happen(s|ing)/ig,1]
+    ],
+    AN:[
+      [/(i )?(bought|got|entered|added) (it |in )?(at|@) ?\$?\d/ig,2],
+      [/my (entry|cost basis|average|avg|buy[- ]?in)( price)?/ig,2],
+      [/it (was|used to be|traded) (at|around|near) ?\$?\d/ig,2],
+      [/52[- ]?week (high|low)|all[- ]?time (high|low)|ath\b/ig,1],
+      [/(get|come|go) back to ?\$?\d/ig,2],
+      [/cheap (now )?(compared|relative) to (where|what) it (was|traded)/ig,3],
+      [/down (from|off) (\$?\d|its high)/ig,2],
+      [/(it'?s|it is) (basically |practically )?on sale|discount to (where|what)/ig,2]
+    ],
+    HD:[
+      [/reddit|wallstreetbets|wsb\b|stocktwits|discord|telegram|twitter|\bx\.com\b|youtube|tik ?tok|fintwit/ig,3],
+      [/everyone('?s| is|'s| else)? (buying|in|talking|piling|long|bullish|saying|posting)/ig,3],
+      [/my (friend|buddy|mate|coworker|colleague)|a guy i (follow|know)/ig,2],
+      [/influencer|guru|(this|that|a) trader i follow|(his|her|their) (alerts?|calls?|signals?|picks?)/ig,2],
+      [/analysts? (say|are|all|upgraded)|price target/ig,1],
+      [/trending|viral|hype[d]?|everybody knows/ig,2],
+      [/smart money|whales are|institutions are (buying|loading)/ig,2],
+      [/(chat|group|forum|thread|community) (is|says|thinks|called)/ig,2]
+    ]
+  },
+  examples:[
+    "I'm down 22% on this stock but I'm not selling at a loss. It always comes back — I'll wait until it gets back to my entry at $54 and then get out. Actually thinking about averaging down here to lower my cost basis.",
+    "This thing is up 60% in two weeks and everyone on Twitter is posting insane gains. It keeps ripping every single day and I don't want to miss the move — thinking of going in big before it's too late. A trader I follow says $200 is guaranteed.",
+    "I've won six trades in a row, I'm clearly seeing the market well right now. I'm sure about this next setup — honestly it can't lose, so I'm sizing up 3x my usual and I don't think I need a stop on this one."
+  ],
+  exampleLabels:["Holding a loser","Chasing a runner","Hot streak"]
+},
+
+/* ---------------- EVERYDAY MODE ---------------- */
+general: {
+  label:"Everyday",
+  copy:{
+    heroH1:`Every big decision has a<br><span>blind spot. Find yours.</span>`,
+    heroP:`Careers, money, relationships, big purchases — most bad decisions aren't information problems, they're bias problems. Blindspot profiles the specific cognitive biases that distort <em>your</em> choices, then checks any decision against them before you commit.`,
+    step1:`10 realistic life scenarios score you 0–9 across six documented decision biases: sunk cost, status quo, overconfidence, social proof, anchoring and present bias.`,
+    step2:`Before committing to a decision — quitting, buying, signing, staying — explain what you're doing and why, in plain language.`,
+    step3:`The engine reads your reasoning, cross-references it against your personal profile, and surfaces which blind spots may be active — before you commit, not after.`,
+    navCheck:"Decision Check",
+    checkTitle:"Decision Check",
+    checkDesc:`Describe the decision you're about to make and <b>why</b>. Write it exactly how you're thinking it — the messier and more honest, the better the read.`,
+    placeholder:`e.g. I've already put three years into this degree so I can't quit now, even though I dread it. Everyone says finishing is the smart move, and honestly switching paths at this point feels like too much of a hassle…`,
+    subject:"decision",
+    clearNote:`Your stated reasoning doesn't show the linguistic markers of the six tracked biases. That doesn't make the decision right — it means the <em>reasoning</em> reads clean. Two checks that still apply: is the downside survivable if you're wrong, and have you priced in the cost of the alternative (including doing nothing)?`
+  },
+  biases:{
+    SC:{name:"Sunk Cost", color:"#f4645c",
+      desc:"Continuing because of what you've already invested — time, money, effort, identity — rather than future value (Thaler, Arkes & Blumer). The past investment is gone whether you continue or not; only the future counts.",
+      questions:[
+        "If you were starting from zero today, with no history, would you choose this path?",
+        "Is the reason to continue about future payoff — or about justifying what's already spent?",
+        "What would you tell a friend in exactly this position, minus your years invested?"
+      ]},
+    SQ:{name:"Status Quo", color:"#4f8ef7",
+      desc:"Defaulting to the current state because change feels riskier and more effortful than it is (Samuelson & Zeckhauser). Inaction is also a decision — with its own costs that compound quietly.",
+      questions:[
+        "Is staying actually better, or just more familiar?",
+        "If your current situation were presented to you today as a new option, would you choose it?",
+        "What does another six months of not deciding cost you?"
+      ]},
+    OC:{name:"Overconfidence", color:"#7c5cff",
+      desc:"Overestimating your knowledge, control and speed — the planning fallacy included. Shows up as certainty language, no plan B, and timelines and budgets that assume nothing goes wrong.",
+      questions:[
+        "What specifically would prove you wrong, and how would you know early?",
+        "What did similar decisions actually cost or take last time — check, don't recall.",
+        "If this goes wrong, is the downside survivable?"
+      ]},
+    SP:{name:"Social Proof", color:"#e879f9",
+      desc:"Deciding because others are doing it, or because someone you admire recommends it (Cialdini). Their circumstances, risk tolerance and goals aren't yours — and crowds reverse without notifying you.",
+      questions:[
+        "Strip away who else is doing or recommending this — does it still make sense for you specifically?",
+        "Is your evidence their outcome, or your own analysis of your situation?",
+        "Would you still do this if you could never tell anyone about it?"
+      ]},
+    AN:{name:"Anchoring", color:"#f5b942",
+      desc:"The first number or reference point dominates everything after it — asking prices, original salaries, 'was $400 now $200'. A discount off an arbitrary anchor is not value.",
+      questions:[
+        "Is your reference point actually relevant, or just the first number you saw?",
+        "What would this be worth to you if you saw it fresh today, with no history?",
+        "Are you evaluating the thing itself — or the distance from the anchor?"
+      ]},
+    PB:{name:"Present Bias", color:"#2dd4a0",
+      desc:"Overweighting immediate reward or relief against long-term outcomes — including manufactured urgency ('today only') and deciding just to end the discomfort of deciding.",
+      questions:[
+        "How will this choice look in 10 minutes, 10 months, and 10 years?",
+        "Is the deadline real, or manufactured — by a seller, or by your own impatience?",
+        "Name the immediate reward pulling you. Would you still choose this without it?"
+      ]}
+  },
+  questions:[
+   {q:"You're two years into a degree, project or business that clearly isn't working. You:",
+    o:[["Re-evaluate from zero — if the future payoff isn't there, I stop.",{}],
+       ["Keep going — I've put in far too much to quit now.",{SC:3}],
+       ["Keep going but quietly scale down my effort.",{SC:2,SQ:1}],
+       ["Ask the people around me whether I should quit.",{SP:2}]]},
+   {q:"Everyone in your circle is moving into a hot new field or trend. You:",
+    o:[["Evaluate whether it actually fits my skills and goals, like any option.",{}],
+       ["Get in — that many people can't be wrong.",{SP:3}],
+       ["Feel like I'm falling behind and rush to join before it's too late.",{SP:2,PB:2}],
+       ["Dismiss it precisely because it's popular.",{OC:2}]]},
+   {q:"You're comfortable but stagnant at work. A promising but uncertain opportunity appears. You:",
+    o:[["Compare both as fresh choices — including the hidden cost of staying.",{}],
+       ["Stay — better the devil you know.",{SQ:3}],
+       ["Stay — I've spent years building my standing here; leaving wastes that.",{SC:3,SQ:1}],
+       ["Jump immediately — feeling comfortable means it's time to go.",{OC:2,PB:1}]]},
+   {q:"You're negotiating for a car or flat with a listed asking price. You:",
+    o:[["Work out its value from comparable data and ignore the listing price.",{}],
+       ["Start from the asking price and aim a bit below it.",{AN:3}],
+       ["Judge the deal by how much discount I got off asking.",{AN:2}],
+       ["Pay close to asking — others are interested and I don't want to lose it.",{SP:1,PB:2}]]},
+   {q:"Estimating how long a big project will take you, you:",
+    o:[["Go with my gut estimate — I know my own speed.",{OC:3}],
+       ["Gut estimate plus a small buffer.",{OC:1}],
+       ["Check how long similar things actually took, and plan for the slow case.",{}],
+       ["Whatever the deadline requires — I'll make it work.",{OC:2,PB:1}]]},
+   {q:"There's something you want to buy now, versus saving toward a bigger goal. You:",
+    o:[["Buy it — you only live once; future me can adjust.",{PB:3}],
+       ["Buy it if it's on sale or the offer is about to end.",{PB:2,AN:1}],
+       ["Wait 30 days — buy only if I still want it and it fits the plan.",{}],
+       ["Agonise, then keep everything as it is.",{SQ:2}]]},
+   {q:"Choosing something important — a doctor, a school, a big service — your main input is:",
+    o:[["Star ratings and whatever most people picked.",{SP:3}],
+       ["One trusted friend's recommendation, taken as decisive.",{SP:2}],
+       ["Popularity as one input, checked against my specific needs.",{}],
+       ["I avoid popular options on principle.",{OC:2}]]},
+   {q:"A subscription or membership you barely use anymore. You:",
+    o:[["Cancel — what I use today decides it.",{}],
+       ["Keep it — I might get back into it, and I've been a member for years.",{SC:2,SQ:2}],
+       ["Keep it — the renewal already went through, so may as well.",{SC:3}],
+       ["Downgrade but keep something, so the years weren't for nothing.",{SC:2}]]},
+   {q:"A 'today only' deal appears on something you'd been vaguely considering. You:",
+    o:[["Buy — an offer like this won't come around again.",{PB:3,AN:1}],
+       ["Buy if the discount off the original price is big enough.",{AN:3}],
+       ["Decide as if there were no deadline — on value alone.",{}],
+       ["Quickly ask friends whether they'd take it.",{SP:2}]]},
+   {q:"Your bank or insurer raises prices. Switching would save real money but costs an afternoon. You:",
+    o:[["Switch — the maths is clear.",{}],
+       ["Stay — switching is a hassle and something could go wrong.",{SQ:3}],
+       ["Plan to switch 'once things calm down'.",{SQ:2,PB:2}],
+       ["Stay — most people stick with theirs, there's probably a reason.",{SP:2,SQ:1}]]}
+  ],
+  patterns:{
+    SC:[
+      [/already (spent|put( in)?|invested|paid|sunk|committed|sacrificed|given)/ig,3],
+      [/too (far|deep|much|long) (in|into|invested|committed)? ?to (quit|stop|walk|leave|turn back|give up)/ig,3],
+      [/(waste[d]?|throwing away) (all )?(that|the|my|those) (time|money|effort|years|work)/ig,3],
+      [/come (this|so) far/ig,2],
+      [/(years|months|so much) (of my life )?(into|on|building) (this|it)/ig,2],
+      [/can'?t (quit|stop|give up|walk away) now/ig,3],
+      [/make it (all )?worth (it|something)/ig,2],
+      [/(would have been|all) for nothing/ig,3],
+      [/i'?ve been (here|a member|doing this|at this) (for )?(years|so long)/ig,2]
+    ],
+    SQ:[
+      [/better the devil (you|i) know/ig,3],
+      [/(too much of a |such a )?hassle|too much effort|can'?t be bothered/ig,2],
+      [/what if (something|it) goes wrong/ig,1],
+      [/(always|we'?ve always) done it (this|that) way/ig,3],
+      [/not the right time|when things (calm|settle|slow) down|once things calm/ig,2],
+      [/stick (with|to) what i know|if it ain'?t broke/ig,3],
+      [/comfortable|comfort zone/ig,1],
+      [/(maybe|deal with it|decide|do it) later|put(ting)? it off|procrastinat/ig,2],
+      [/(rather|safer to) (just )?(stay|keep things|leave it) (put|as they are|as is|alone)?/ig,2]
+    ],
+    OC:[
+      [/(i'?m|i am) (sure|certain|positive|convinced)/ig,2],
+      [/guaranteed|can'?t (fail|lose|go wrong)|sure thing|no way (it|this) (fails|goes wrong)/ig,3],
+      [/i know (it|this|exactly|for a fact|what i'?m doing)/ig,2],
+      [/\b(100%|definitely|obviously|easily)\b/ig,2],
+      [/no plan b|nothing (can|will) go wrong|won'?t need a backup/ig,3],
+      [/piece of cake|how hard (can|could) it be/ig,3],
+      [/(i'?ll|i will) (just )?figure it out/ig,1],
+      [/(unlike|not like) (most|other) people,? i/ig,2],
+      [/(never|always) (fails?|works?) for me/ig,2]
+    ],
+    SP:[
+      [/everyone( i know| else)?('?s| is)? (doing|buying|moving|switching|using|joining|saying|says|posting|talking)/ig,3],
+      [/my (friends?|mates?|family|parents|brother|sister|coworkers?|colleagues?) (say|says|said|think|thinks|all|are all)/ig,2],
+      [/reviews?|star ?ratings?|top[- ]?rated|best[- ]?seller|most popular/ig,2],
+      [/influencer|saw (it|this) on (tiktok|instagram|youtube|reddit|twitter|facebook)/ig,3],
+      [/(they|people) (say|all say|will think|would think|might think)/ig,2],
+      [/trend(ing)?|viral|hype[d]?|everybody('?s| is)? (doing|on)/ig,2],
+      [/no one (else )?(does|is doing) (it|this|that)/ig,1],
+      [/(fall(ing)?|left) behind|everyone else is ahead/ig,2],
+      [/that many people can'?t be wrong/ig,3]
+    ],
+    AN:[
+      [/asking price|list(ed|ing) price|sticker price|original(ly)? (priced?|cost)/ig,2],
+      [/(was|used to (be|cost)) \$?\d/ig,2],
+      [/\d+\s?% (off|discount)|half (price|off)|marked down|on sale( from)?/ig,2],
+      [/\brrp\b|\bmsrp\b/ig,2],
+      [/compared to (what|where) it (was|used to)/ig,2],
+      [/down from \$?\d/ig,2],
+      [/(he|she|they) (started|opened|came in) at/ig,2],
+      [/(such|what) a (deal|bargain|steal)/ig,2],
+      [/my (old|previous|current) (salary|rent|price|rate)/ig,2]
+    ],
+    PB:[
+      [/today only|limited time|ends (today|tonight|soon)|last (chance|day)|act (now|fast)|won'?t (last|come (a)?round again)/ig,3],
+      [/right now|immediately|can'?t wait|need it now/ig,2],
+      [/you only live once|yolo|treat myself|i deserve (it|this)/ig,2],
+      [/(deal with|worry about) (it|that|the consequences) later|future me/ig,2],
+      [/(just|really) want it now/ig,2],
+      [/before (the price|it) goes up/ig,2],
+      [/(sick|tired) of (thinking|deciding|waiting|going back and forth)/ig,2],
+      [/get it over with|just (want to )?be done/ig,2]
+    ]
+  },
+  examples:[
+    "I've already put three years and most of my savings into this business. It's not really working but I can't quit now — all that time would have been for nothing. I've come so far, I just need to make it worth it.",
+    "Everyone I know is switching into this field and my feed is full of people saying it changed their life. I feel like I'm falling behind. There's an enrollment discount that ends tonight so I need to decide right now.",
+    "My insurer raised prices again. Switching would save me about $600 a year, but honestly it's such a hassle and something could go wrong with a new company. I'd rather just stay put — I've always done it this way and my current plan originally cost way less anyway."
+  ],
+  exampleLabels:["Can't quit now","Everyone's doing it","Staying put"]
+}
+};
+
+/* ================================================================
+   SHARED ENGINE — everything below is mode-agnostic.
+   ================================================================ */
+let MODE, BIASES, BIAS_KEYS, QUESTIONS, PATTERNS, EXAMPLES, COPY, MAX_RAW, profile;
+let answers=[], qIndex=0;
+
+function storageGet(k){ try{return localStorage.getItem(k);}catch(e){return null;} }
+function storageSet(k,v){ try{localStorage.setItem(k,v);}catch(e){} }
+
+function loadProfile(mode){
+  let raw = storageGet("blindspot_profile_"+mode);
+  if(!raw && mode==="trading") raw = storageGet("blindspot_profile"); // legacy v1 key
+  try{ return raw ? JSON.parse(raw) : null; }catch(e){ return null; }
+}
+function saveProfile(p){ storageSet("blindspot_profile_"+MODE, JSON.stringify(p)); }
+
+function applyMode(mode, rerender=true){
+  MODE=mode; storageSet("blindspot_mode",mode);
+  const M=MODES[mode];
+  BIASES=M.biases; BIAS_KEYS=Object.keys(BIASES);
+  QUESTIONS=M.questions; PATTERNS=M.patterns; EXAMPLES=M.examples; COPY=M.copy;
+  MAX_RAW={};
+  BIAS_KEYS.forEach(k=>{ MAX_RAW[k]=QUESTIONS.reduce((s,q)=>s+Math.max(...q.o.map(o=>o[1][k]||0)),0); });
+  profile=loadProfile(mode);
+  document.body.classList.toggle("mode-general", mode==="general");
+  document.getElementById("modeTrading").classList.toggle("active",mode==="trading");
+  document.getElementById("modeGeneral").classList.toggle("active",mode==="general");
+  // copy
+  document.getElementById("heroH1").innerHTML=COPY.heroH1;
+  document.getElementById("heroP").innerHTML=COPY.heroP;
+  document.getElementById("step1").textContent=COPY.step1;
+  document.getElementById("step2").textContent=COPY.step2;
+  document.getElementById("step3").textContent=COPY.step3;
+  document.getElementById("navCheck").textContent=COPY.navCheck;
+  document.getElementById("checkTitle").textContent=COPY.checkTitle;
+  document.getElementById("checkDesc").innerHTML=COPY.checkDesc;
+  document.getElementById("tradeText").placeholder=COPY.placeholder;
+  document.getElementById("exampleRow").innerHTML =
+    `<span class="muted small" style="align-self:center">Try an example:</span>`+
+    M.exampleLabels.map((l,i)=>`<button class="chip-btn" onclick="fillExample(${i})">${l}</button>`).join("");
+  document.getElementById("navProfile").textContent = profile ? "My Profile ✓" : "My Profile";
+  if(rerender){
+    document.getElementById("checkResults").innerHTML="";
+    document.getElementById("tradeText").value="";
+    renderCheckStatus();
+    const visible=document.querySelector(".screen.visible").id;
+    if(visible==="screen-profile") renderProfile();
+    if(visible==="screen-assess") startAssessment();
+  }
+}
+document.getElementById("modeTrading").addEventListener("click",()=>applyMode("trading"));
+document.getElementById("modeGeneral").addEventListener("click",()=>applyMode("general"));
+
+/* ---------- nav ---------- */
+function show(name){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("visible"));
+  document.getElementById("screen-"+name).classList.add("visible");
+  document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active", b.dataset.nav===name));
+  if(name==="profile") renderProfile();
+  if(name==="check") renderCheckStatus();
+  window.scrollTo({top:0});
+}
+document.querySelectorAll("nav button").forEach(b=>{
+  b.addEventListener("click",()=>{
+    if(b.dataset.nav==="assess"){ startAssessment(); return; }
+    show(b.dataset.nav);
+  });
+});
+
+/* ---------- assessment ---------- */
+function startAssessment(){ answers=[]; qIndex=0; show("assess"); renderQuestion(); }
+function renderQuestion(){
+  const q=QUESTIONS[qIndex];
+  document.getElementById("progBar").style.width=(qIndex/QUESTIONS.length*100)+"%";
+  document.getElementById("backBtn").style.visibility=qIndex===0?"hidden":"visible";
+  const order=q.o.map((_,i)=>i).sort(()=>Math.random()-.5);
+  document.getElementById("qCard").innerHTML=
+    `<div class="qnum">Question ${qIndex+1} of ${QUESTIONS.length} · ${MODES[MODE].label} mode</div>
+     <div class="qtext">${q.q}</div>`+
+    order.map(i=>`<button class="opt" onclick="answer(${i})">${q.o[i][0]}</button>`).join("");
+}
+function answer(i){ answers[qIndex]=i; qIndex++; qIndex>=QUESTIONS.length?finishAssessment():renderQuestion(); }
+function prevQuestion(){ if(qIndex>0){ qIndex--; renderQuestion(); } }
+
+function computeProfile(ans){
+  const raw={}; BIAS_KEYS.forEach(k=>raw[k]=0);
+  ans.forEach((optIdx,qi)=>{ const w=QUESTIONS[qi].o[optIdx][1]; for(const k in w) raw[k]+=w[k]; });
+  const scores={};
+  BIAS_KEYS.forEach(k=>{ scores[k]=MAX_RAW[k]?Math.round(9*raw[k]/MAX_RAW[k]):0; });
+  return {scores, date:new Date().toISOString()};
+}
+function finishAssessment(){
+  profile=computeProfile(answers); saveProfile(profile);
+  document.getElementById("navProfile").textContent="My Profile ✓";
+  show("profile");
+}
+
+/* ---------- profile ---------- */
+function levelOf(s){ return s>=6?["high","HIGH RISK"]:s>=3?["mod","MODERATE"]:["low","LOW"]; }
+
+function radarSVG(scores,size=300){
+  const cx=size/2,cy=size/2,R=size/2-42,n=BIAS_KEYS.length;
+  const pt=(i,r)=>{const a=Math.PI*2*i/n-Math.PI/2;return [cx+r*Math.cos(a),cy+r*Math.sin(a)];};
+  let grid="";
+  for(let ring=1;ring<=3;ring++){
+    const pts=BIAS_KEYS.map((_,i)=>pt(i,R*ring/3).join(",")).join(" ");
+    grid+=`<polygon points="${pts}" fill="none" stroke="#243244" stroke-width="1"/>`;
+  }
+  let axes="",labels="";
+  BIAS_KEYS.forEach((k,i)=>{
+    const [x,y]=pt(i,R); axes+=`<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="#243244"/>`;
+    const [lx,ly]=pt(i,R+26);
+    labels+=`<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" font-size="11.5" font-weight="600" fill="#8b97a8">${BIASES[k].name}</text>`;
+  });
+  const shape=BIAS_KEYS.map((k,i)=>pt(i,R*Math.max(scores[k],0.4)/9).join(",")).join(" ");
+  const dots=BIAS_KEYS.map((k,i)=>{const [x,y]=pt(i,R*Math.max(scores[k],0.4)/9);
+    return `<circle cx="${x}" cy="${y}" r="4" fill="${BIASES[k].color}"/>`;}).join("");
+  return `<svg viewBox="0 0 ${size} ${size}" width="100%" style="max-width:${size+40}px">
+    ${grid}${axes}
+    <polygon points="${shape}" fill="rgba(79,142,247,.18)" stroke="#4f8ef7" stroke-width="2"/>
+    ${dots}${labels}</svg>`;
+}
+
+function renderProfile(){
+  const el=document.getElementById("screen-profile");
+  if(!profile){
+    el.innerHTML=`<div class="empty-state"><h2 style="color:var(--text);margin-bottom:10px">No ${MODES[MODE].label.toLowerCase()} fingerprint yet</h2>
+      <p style="margin-bottom:22px">Take the 10-question ${MODES[MODE].label} assessment to map your bias profile for this mode.</p>
+      <button class="btn" onclick="startAssessment()">Start assessment →</button></div>`;
+    return;
+  }
+  const s=profile.scores;
+  const sorted=[...BIAS_KEYS].sort((a,b)=>s[b]-s[a]);
+  const top=sorted.filter(k=>s[k]>=6);
+  const summary=top.length
+    ? `Your dominant vulnerabilities in ${MODES[MODE].label.toLowerCase()} decisions: <b>${top.map(k=>BIASES[k].name).join(", ")}</b>. ${COPY.checkTitle} will watch hardest for these.`
+    : `No bias scored in the high-risk zone — your main risks are situational. ${COPY.checkTitle} will still watch for moderate patterns.`;
+  el.innerHTML=`
+    <h2 style="letter-spacing:-.02em;margin-bottom:6px">Your Bias Fingerprint <span class="muted" style="font-size:15px;font-weight:500">· ${MODES[MODE].label} mode</span></h2>
+    <p class="muted" style="margin-bottom:20px">${summary}</p>
+    <div class="profile-grid">
+      <div class="card radar-card">${radarSVG(s)}
+        <span class="muted small">Assessed ${new Date(profile.date).toLocaleDateString()}</span>
+        <button class="btn ghost sm" onclick="startAssessment()">Retake assessment</button>
+      </div>
+      <div class="card">
+        ${sorted.map(k=>`<div class="bias-row">
+            <span class="name">${BIASES[k].name}</span>
+            <div class="bar"><i style="width:${s[k]/9*100}%;background:${BIASES[k].color}"></i></div>
+            <span class="score-pill" style="color:${BIASES[k].color}">${s[k]}<span class="muted" style="font-weight:400">/9</span></span>
+          </div>`).join("")}
+      </div>
+    </div>
+    <h3 style="margin:26px 0 12px;letter-spacing:-.01em">What each score means for you</h3>
+    ${sorted.map(k=>{
+      const [cls,label]=levelOf(s[k]);
+      return `<details class="bias-detail"><summary>${BIASES[k].name} — ${s[k]}/9 <span class="lvl ${cls}">${label}</span></summary>
+        <div class="body">${BIASES[k].desc}</div></details>`;}).join("")}
+    <div style="margin-top:26px;text-align:center">
+      <button class="btn" onclick="show('check')">Run a ${COPY.checkTitle} with this profile →</button>
+    </div>`;
+}
+
+/* ---------- NLP engine ---------- */
+function analyzeText(text){
+  const results={};
+  BIAS_KEYS.forEach(k=>{
+    let weight=0; const matches=[]; const ranges=[];
+    PATTERNS[k].forEach(([re,w])=>{
+      if(!w) return;
+      re.lastIndex=0; let m;
+      while((m=re.exec(text))!==null){
+        weight+=w;
+        if(matches.length<4 && m[0].trim().length>1) matches.push(m[0].trim());
+        ranges.push([m.index,m.index+m[0].length,k]);
+        if(m.index===re.lastIndex) re.lastIndex++;
+      }
+    });
+    const signal=Math.min(weight,6)/6;
+    const pScore=profile?profile.scores[k]:4.5;
+    const combined=signal*(0.35+0.65*pScore/9);
+    results[k]={signal,combined,matches,ranges,pScore};
+  });
+  return results;
+}
+
+function highlightEcho(text,allRanges){
+  if(!allRanges.length) return null;
+  const merged=[...allRanges].sort((a,b)=>a[0]-b[0]).reduce((acc,r)=>{
+    if(acc.length&&r[0]<=acc[acc.length-1][1]){acc[acc.length-1][1]=Math.max(acc[acc.length-1][1],r[1]);}
+    else acc.push([r[0],r[1]]);
+    return acc;
+  },[]);
+  let out="",pos=0;
+  const esc=s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  merged.forEach(([a,b])=>{out+=esc(text.slice(pos,a))+"<mark>"+esc(text.slice(a,b))+"</mark>";pos=b;});
+  out+=esc(text.slice(pos));
+  return out;
+}
+
+/* ---------- check UI ---------- */
+function fillExample(i){ document.getElementById("tradeText").value=EXAMPLES[i]; }
+
+function renderCheckStatus(){
+  document.getElementById("profileStatus").innerHTML = profile
+    ? `✓ Analysing against your personal ${MODES[MODE].label.toLowerCase()} fingerprint`
+    : `⚠ No ${MODES[MODE].label.toLowerCase()} profile yet — analysis will be generic. <a href="#" onclick="startAssessment();return false">Take the assessment</a> for personalised results.`;
+}
+
+function runCheck(){
+  const text=document.getElementById("tradeText").value.trim();
+  const out=document.getElementById("checkResults");
+  if(!text){ out.innerHTML=`<div class="card muted">Describe the ${COPY.subject} first — what you're doing and why.</div>`; return; }
+  if(text.split(/\s+/).length<8){
+    out.innerHTML=`<div class="card muted">That's too brief to read anything from. Add the <b>why</b> — your reasoning is where the biases hide.</div>`;
+    return;
+  }
+  const res=analyzeText(text);
+  const flagged=BIAS_KEYS.filter(k=>res[k].signal>0).sort((a,b)=>res[b].combined-res[a].combined);
+  const allRanges=flagged.flatMap(k=>res[k].ranges);
+  const echo=highlightEcho(text,allRanges);
+
+  let html="";
+  if(echo) html+=`<h3 style="margin:26px 0 10px;letter-spacing:-.01em">What you wrote — flagged language highlighted</h3><div class="echo">${echo}</div>`;
+
+  if(!flagged.length){
+    html+=`<div class="card result-card low">
+      <div class="result-head"><span class="lvl low">CLEAR</span><h3>No bias language detected</h3></div>
+      <p class="muted" style="font-size:14.5px">${COPY.clearNote}</p>
+      ${standingRisks()}</div>`;
+  } else {
+    html+=`<h3 style="margin:4px 0 12px;letter-spacing:-.01em">Possible active biases — ranked for <em>your</em> profile</h3>`;
+    flagged.forEach(k=>{
+      const r=res[k];
+      const cls=r.combined>=0.45?"high":r.combined>=0.20?"mod":"low";
+      const label=cls==="high"?"HIGH — ACT ONLY AFTER READING THIS":cls==="mod"?"MODERATE — WORTH A PAUSE":"LOW — BE AWARE";
+      const why=profile
+        ? (r.pScore>=6
+            ? `This is one of your <b>highest-scored biases (${r.pScore}/9)</b> — your assessment says this exact pattern is a personal blind spot, and your reasoning just used its language.`
+            : r.pScore>=3
+              ? `You scored <b>${r.pScore}/9</b> here — a moderate vulnerability, and this reasoning shows its markers.`
+              : `You scored low here (${r.pScore}/9), so this is likely situational rather than habitual — but the language is present.`)
+        : `No profile on file — this is based on your language alone. Take the assessment to find out if this is a personal blind spot.`;
+      html+=`<div class="card result-card ${cls}">
+        <div class="result-head"><span class="lvl ${cls}">${label}</span><h3>${BIASES[k].name}</h3></div>
+        <div class="match-chips">${r.matches.map(m=>`<span>"${m}"</span>`).join("")}</div>
+        <p class="muted" style="font-size:14px;margin:6px 0 4px">${why}</p>
+        <p class="muted" style="font-size:14px">${BIASES[k].desc}</p>
+        <p style="font-weight:600;font-size:14px;margin-top:12px">Before you commit, answer honestly:</p>
+        <ul class="rq">${BIASES[k].questions.map(q=>`<li>${q}</li>`).join("")}</ul>
+      </div>`;
+    });
+    html+=standingRisks(flagged);
+  }
+  html+=`<div class="callout"><b>Blindspot doesn't tell you what to do.</b> It makes the bias visible so the decision is conscious instead of automatic. If you can answer the questions above and still want to go ahead — that's a decision, not a reflex. Not financial or professional advice.</div>`;
+  out.innerHTML=html;
+  out.scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+function standingRisks(exclude=[]){
+  if(!profile) return "";
+  const standing=BIAS_KEYS.filter(k=>profile.scores[k]>=6&&!exclude.includes(k));
+  if(!standing.length) return "";
+  return `<p class="muted small" style="margin-top:14px">Standing risks from your profile (no language detected this time, but stay aware): <b>${standing.map(k=>BIASES[k].name).join(", ")}</b>.</p>`;
+}
+
+/* ---------- init ---------- */
+applyMode(storageGet("blindspot_mode")||"trading", false);
+renderCheckStatus();
+document.getElementById("checkResults").innerHTML="";
+</script>
+</body>
+</html>
